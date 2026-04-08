@@ -1,0 +1,17 @@
+[project]
+name = "linz-s3-utils"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Quinn Hornblow", email = "quinn.hornblow@protonmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+linz-s3-utils = "linz_s3_utils:main"
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"
