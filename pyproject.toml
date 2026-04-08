@@ -7,7 +7,9 @@ authors = [
     { name = "Quinn Hornblow", email = "quinn.hornblow@protonmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "cloudpathlib[s3]>=0.23.0",
+]
 
 [project.scripts]
 linz-s3-utils = "linz_s3_utils:main"
@@ -15,3 +17,8 @@ linz-s3-utils = "linz_s3_utils:main"
 [build-system]
 requires = ["uv_build>=0.10.11,<0.11.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "notebook>=7.5.5",
+]
