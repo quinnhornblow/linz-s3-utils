@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Quinn Hornblow", email = "quinn.hornblow@protonmail.com" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "cloudpathlib[s3]>=0.23.0",
 ]
