@@ -16,8 +16,10 @@ def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") 
     s3_resolution = int(s3_dir.parts[-2].split("_")[1][0])  # e.g., "1"
     s3_srs = int(s3_dir.parts[-1])  # e.g., "2193"
 
-    assert s3_resolution in [1, 8], f"Unexpected resolution {s3_resolution} in {s3_dir}"
-    assert s3_srs in [2193, 4326], f"Unexpected SRS {s3_srs} in {s3_dir}"
+    if s3_resolution not in [1, 8]:
+        raise ValueError(f"Unexpected resolution {s3_resolution} in {s3_dir}")
+    if s3_srs not in [2193, 4326]:
+        raise ValueError(f"Unexpected SRS {s3_srs} in {s3_dir}")
 
     vrt_paths = [
         str(p).replace(
