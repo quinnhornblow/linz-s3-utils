@@ -1,27 +1,35 @@
-from linz_s3_utils.constants import S3_ELEVATION_DIR
-from linz_s3_utils.gdal import mosaic
+from pathlib import Path
+
+from cloudpathlib import CloudPath
+
+from linz_s3_utils.gdal import build_vrt
 
 
-def build_vrt(s3_dir, output_vrt, extension=".tiff"):
+def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") -> None:
     """Build a VRT file from all files in the given S3 directory."""
-    tif_files = sorted(s3_dir.rglob(f"*{extension}"), key=str)
-    if not tif_files:
-        print(f"No {extension} files found in {s3_dir}")
+
+    raster_files = sorted(s3_dir.rglob(f"*{search_extension}"), key=str)
+    if not raster_files:
+        print(f"No {search_extension} files found in {s3_dir}")
         return
 
-    s3_base_name = s3_dir.parents[-1].name
+    s3_base_name = str(s3_dir.parents[-1].name)  # "nz-elevation"
+    s3_resolution = int(s3_dir.parts[-2].split("_")[1][0])  # e.g., "1"
+    s3_srs = int(s3_dir.parts[-1])  # e.g., "2193"
+
+    assert s3_resolution in [1, 8], f"Unexpected resolution {s3_resolution} in {s3_dir}"
+    assert s3_srs in [2193, 4326], f"Unexpected SRS {s3_srs} in {s3_dir}"
 
     vrt_paths = [
         str(p).replace(
             f"s3://{s3_base_name}/",
             f"/vsicurl/https://{s3_base_name}.s3-ap-southeast-2.amazonaws.com/",
         )
-        for p in tif_files
+        for p in raster_files
     ]
 
-    # Build the VRT command
-    mosaic(vrt_paths, output_vrt)
+    if not output_vrt.parent.exists():
+        output_vrt.parent.mkdir(parents=True)
 
-
-if __name__ == "__main__":
-    build_vrt(S3_ELEVATION_DIR / "new-zealand/new-zealand/dem_1m/2193", "output2.vrt")
+    # Build the VRT
+    build_vrt(vrt_paths, output_vrt, resolution=s3_resolution, srs=s3_srs)

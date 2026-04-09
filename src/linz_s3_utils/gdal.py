@@ -1,15 +1,21 @@
-# import subprocess
+# https://gdal.org/en/release-3.11/programs/gdal_cli_from_python.html
+
 from osgeo import gdal
 
-# https://gdal.org/en/stable/programs/gdal_cli_from_python.html#gdal-cli-from-python
+gdal.UseExceptions()
 
 
-def mosaic(input_files, output_file):
+def build_vrt(input_files, output_file, resolution=1, srs=2193):
     """Build a VRT file from all files in the given S3 directory."""
 
-    gdal.alg.raster.mosaic(
-        input_files,
+    gdal.BuildVRT(
         output_file,
-        resolution="1,1",
-        # progress=True,
+        input_files,
+        options=gdal.BuildVRTOptions(
+            resampleAlg="nearest",
+            xRes=resolution,
+            yRes=resolution,
+            outputSRS=f"EPSG:{srs}",
+            callback=gdal.TermProgress_nocb,
+        ),
     )

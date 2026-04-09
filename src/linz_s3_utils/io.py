@@ -1,6 +1,6 @@
 from cloudpathlib import CloudPath
 
-from linz_s3_utils.constants import S3_ELEVATION_DIR, S3_COASTAL_DIR, S3_IMAGERY_DIR
+from linz_s3_utils.constants import S3_COASTAL_DIR, S3_ELEVATION_DIR, S3_IMAGERY_DIR
 
 
 def list_elevation_directories() -> list[CloudPath]:
