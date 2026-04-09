@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-build-dem-vrts = "linz_s3_utils:build_dem_vrts"
+build-dem-vrts = "linz_s3_utils.cli:build_dem_vrts"
 
 [build-system]
 requires = ["uv_build>=0.10.11,<0.11.0"]
@@ -33,5 +33,3 @@ gdal = [
 name = "geospatial_wheels"
 url = "https://nathanjmcdougall.github.io/geospatial-wheels-index/"
 explicit = true
-
-
