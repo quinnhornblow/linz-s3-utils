@@ -10,8 +10,7 @@ def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") 
 
     raster_files = sorted(s3_dir.rglob(f"*{search_extension}"), key=str)
     if not raster_files:
-        print(f"No {search_extension} files found in {s3_dir}")
-        return
+        raise FileNotFoundError(f"No {search_extension} files found in {s3_dir}")
 
     s3_base_name = str(s3_dir.parents[-1].name)  # "nz-elevation"
     s3_resolution = int(s3_dir.parts[-2].split("_")[1][0])  # e.g., "1"
