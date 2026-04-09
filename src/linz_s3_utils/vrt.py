@@ -1,4 +1,5 @@
-import subprocess
+from linz_s3_utils.constants import S3_ELEVATION_DIR
+from linz_s3_utils.gdal import mosaic
 
 
 def build_vrt(s3_dir, output_vrt, extension=".tiff"):
@@ -8,10 +9,19 @@ def build_vrt(s3_dir, output_vrt, extension=".tiff"):
         print(f"No {extension} files found in {s3_dir}")
         return
 
-    # Build the VRT command
-    input_files_str = " ".join(str(tif) for tif in tif_files)
-    vrt_command = f"gdalbuildvrt {output_vrt} {input_files_str}"
-    print(f"Running command: {vrt_command}")
+    s3_base_name = s3_dir.parents[-1].name
 
-    # Execute the command
-    subprocess.run(vrt_command, shell=True, check=True)
+    vrt_paths = [
+        str(p).replace(
+            f"s3://{s3_base_name}/",
+            f"/vsicurl/https://{s3_base_name}.s3-ap-southeast-2.amazonaws.com/",
+        )
+        for p in tif_files
+    ]
+
+    # Build the VRT command
+    mosaic(vrt_paths, output_vrt)
+
+
+if __name__ == "__main__":
+    build_vrt(S3_ELEVATION_DIR / "new-zealand/new-zealand/dem_1m/2193", "output2.vrt")
