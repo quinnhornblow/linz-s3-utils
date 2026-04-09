@@ -6,12 +6,30 @@ readme = "README.md"
 authors = [
     { name = "Quinn Hornblow", email = "quinn.hornblow@protonmail.com" }
 ]
-requires-python = ">=3.14"
-dependencies = []
+requires-python = ">=3.11"
+dependencies = [
+    "cloudpathlib[s3]>=0.23.0",
+    "gdal>=3.11.4",
+]
 
 [project.scripts]
-linz-s3-utils = "linz_s3_utils:main"
+build-dem-vrts = "linz_s3_utils.cli:build_dem_vrts"
 
 [build-system]
 requires = ["uv_build>=0.10.11,<0.11.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "notebook>=7.5.5",
+]
+
+[tool.uv.sources]
+gdal = [
+  { index = "geospatial_wheels", marker = "sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "geospatial_wheels"
+url = "https://nathanjmcdougall.github.io/geospatial-wheels-index/"
+explicit = true
