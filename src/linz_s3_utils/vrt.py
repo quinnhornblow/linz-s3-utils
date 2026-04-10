@@ -33,4 +33,10 @@ def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") 
         output_vrt.parent.mkdir(parents=True)
 
     # Build the VRT
-    build_vrt(vrt_paths, output_vrt, resolution=s3_resolution, srs=s3_srs)
+    build_vrt(
+        vrt_paths,
+        output_vrt,
+        resolution=s3_resolution,
+        target_aligned_pixels=False,
+        srs=s3_srs,
+    )
