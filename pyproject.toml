@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-build-dem-vrts = "linz_s3_utils.cli:build_dem_vrts"
+build-nz-dem = "linz_s3_utils.cli:build_nz_dem"
 
 [build-system]
 requires = ["uv_build>=0.10.11,<0.11.0"]
@@ -22,6 +22,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "notebook>=7.5.5",
+    "pre-commit>=4.5.1",
     "ruff>=0.15.10",
 ]
 
