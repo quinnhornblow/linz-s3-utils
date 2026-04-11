@@ -2,7 +2,7 @@
 
 Small utilities for working with public LINZ raster data hosted in S3.
 
-The main CLI currently builds a New Zealand DEM by combining:
+The main CLI builds a DEM of all New Zealand by combining:
 
 - 1m LiDAR DEM tiles
 - 8m contour DEM tiles

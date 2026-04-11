@@ -1,4 +1,4 @@
-from osgeo import gdal
+from osgeo import gdal, gdalconst
 
 # https://gdal.org/en/release-3.11/programs/gdal_cli_from_python.html
 gdal.UseExceptions()
@@ -38,6 +38,8 @@ def translate(input_file, output_file):
         output_file,
         input_file,
         options=gdal.TranslateOptions(
+            outputType=gdalconst.GDT_Float32,
+            creationOptions=["TILED=YES", "COMPRESS=LZW"],
             callback=gdal.TermProgress_nocb,
         ),
     )
