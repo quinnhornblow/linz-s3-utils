@@ -485,42 +485,7 @@ wheels = [
 [[package]]
 name = "gdal"
 version = "3.11.4"
-source = { registry = "https://nathanjmcdougall.github.io/geospatial-wheels-index/" }
-resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-]
-wheels = [
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp311-cp311-win32.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp311-cp311-win_amd64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp311-cp311-win_arm64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp312-cp312-win32.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp312-cp312-win_amd64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp312-cp312-win_arm64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp313-cp313-win32.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp313-cp313-win_amd64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp313-cp313-win_arm64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp314-cp314-win32.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp314-cp314-win_amd64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp314-cp314-win_arm64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp314-cp314t-win32.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp314-cp314t-win_amd64.whl" },
-    { url = "https://github.com/cgohlke/geospatial-wheels/releases/download/v2025.10.25/gdal-3.11.4-cp314-cp314t-win_arm64.whl" },
-]
-
-[[package]]
-name = "gdal"
-version = "3.11.4"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'linux'",
-    "python_full_version >= '3.14' and sys_platform != 'linux' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'linux' and sys_platform != 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
-]
 sdist = { url = "https://files.pythonhosted.org/packages/62/e0/1840d476bfd2d1e8c22dacb612027a16ad1dfba60d5d4379bdaaf6a1545f/gdal-3.11.4.tar.gz", hash = "sha256:c28cd5ffda3df98555e21083d922762b0a095d8f10292e2ec60ee0d55651d74a", size = 878351, upload-time = "2025-09-11T09:28:00.097Z" }
 
 [[package]]
@@ -943,8 +908,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "cloudpathlib", extra = ["s3"] },
-    { name = "gdal", version = "3.11.4", source = { registry = "https://nathanjmcdougall.github.io/geospatial-wheels-index/" }, marker = "sys_platform == 'win32'" },
-    { name = "gdal", version = "3.11.4", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "gdal" },
 ]
 
 [package.dev-dependencies]
@@ -957,8 +921,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cloudpathlib", extras = ["s3"], specifier = ">=0.23.0" },
-    { name = "gdal", marker = "sys_platform != 'win32'", specifier = ">=3.11.4" },
-    { name = "gdal", marker = "sys_platform == 'win32'", specifier = ">=3.11.4", index = "https://nathanjmcdougall.github.io/geospatial-wheels-index/" },
+    { name = "gdal", specifier = ">=3.11.4" },
 ]
 
 [package.metadata.requires-dev]
