@@ -28,9 +28,6 @@ def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") 
         for p in raster_files
     ]
 
-    if not output_vrt.parent.exists():
-        output_vrt.parent.mkdir(parents=True)
-
     # Build the VRT
     build_vrt(
         vrt_paths,
