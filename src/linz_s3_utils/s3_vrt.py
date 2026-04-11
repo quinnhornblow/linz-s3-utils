@@ -7,7 +7,6 @@ from linz_s3_utils.gdal import build_vrt
 
 def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") -> None:
     """Build a VRT file from all files in the given S3 directory."""
-
     raster_files = sorted(s3_dir.rglob(f"*{search_extension}"), key=str)
     if not raster_files:
         raise FileNotFoundError(f"No {search_extension} files found in {s3_dir}")
