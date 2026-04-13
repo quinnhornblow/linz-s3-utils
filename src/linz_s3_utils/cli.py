@@ -73,7 +73,6 @@ def build_nz_dem() -> None:
             ],
             output_vrt,
             resolution=args.resolution,
-            resample_alg="bilinear",
         )
 
     if args.export_tiff:
