@@ -1,10 +1,20 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-full-latest
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install UV
+COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /uvx /bin/
 
-COPY pyproject.toml .
-COPY uv.lock .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential
 
+# ENV UV_PYTHON=/usr/bin/python3
+# ENV GDAL_CONFIG=/usr/bin/gdal-config
 
-RUN /root/.local/bin/uv pip compile pyproject.toml -o requirements.txt
-RUN /root/.local/bin/uv pip install --system --break-system-packages --no-cache -r requirements.txt
+# Copy the project into the image
+WORKDIR /app
+COPY pyproject.toml uv.lock README.md ./
+COPY src ./src
+
+RUN uv sync --frozen --no-dev
+
+# Presuming there is a `my_app` command provided by the project
+CMD ["uv", "run", "build-nz-dem", "--", "--help"]
