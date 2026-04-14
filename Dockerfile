@@ -1,20 +1,19 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.5
 
-# Install UV
+# Install UV and build-essential
 COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /uvx /bin/
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential
 
-# ENV UV_PYTHON=/usr/bin/python3
-# ENV GDAL_CONFIG=/usr/bin/gdal-config
-
 # Copy the project into the image
 WORKDIR /app
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock .python-version README.md ./
 COPY src ./src
 
-RUN uv sync --frozen --no-dev
+# Set environment variables for UV
+ENV UV_NO_DEV=1
+ENV UV_LOCKED=1
 
-# Presuming there is a `my_app` command provided by the project
+RUN uv sync
+
 CMD ["uv", "run", "build-nz-dem", "--", "--help"]
