@@ -33,6 +33,7 @@ def vrt_from_dir(s3_dir: CloudPath, output_vrt: Path, search_extension=".tiff") 
         vrt_paths,
         output_vrt,
         resolution=s3_resolution,
+        resample_alg="nearest",
         target_aligned_pixels=False,
         srs=s3_srs,
     )

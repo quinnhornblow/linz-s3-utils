@@ -1,14 +1,57 @@
+from enum import Enum
+
 from osgeo import gdal
 
 # https://gdal.org/en/release-3.11/programs/gdal_cli_from_python.html
 gdal.UseExceptions()
 
 
+class OUTPUT_FORMAT(Enum):
+    NONE = {
+        "format": "GTiff",
+        "creationOptions": ["COMPRESS=NONE"],
+    }
+    LZW = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=LZW",
+            "PREDICTOR=2",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
+    DEFLATE = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=DEFLATE",
+            "PREDICTOR=2",
+            "LEVEL=9",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
+    ZSTD = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=ZSTD",
+            "PREDICTOR=2",
+            "LEVEL=19",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
+    LERC = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=LERC",
+            "MAX_Z_ERROR=0.001",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
+
+
 def build_vrt(
     input_files,
     output_file,
     resolution=1,
-    resample_alg="nearest",
+    resample_alg="bilinear",
     target_aligned_pixels=True,
     srs=None,
 ):
@@ -30,7 +73,7 @@ def build_vrt(
     print()
 
 
-def translate(input_file, output_file):
+def translate(input_file, output_file, output_config=OUTPUT_FORMAT["NONE"]):
     """Translate a VRT file to a GeoTIFF."""
     print(f"Translating {input_file.name} to {output_file.name}")
 
@@ -38,6 +81,8 @@ def translate(input_file, output_file):
         output_file,
         input_file,
         options=gdal.TranslateOptions(
+            format=output_config.value["format"],
+            creationOptions=output_config.value["creationOptions"],
             callback=gdal.TermProgress_nocb,
         ),
     )
