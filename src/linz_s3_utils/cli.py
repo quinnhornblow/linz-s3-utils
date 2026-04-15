@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from linz_s3_utils.constants import S3_ELEVATION_DIR
-from linz_s3_utils.gdal import build_vrt, translate
+from linz_s3_utils.constants import DATA_DIR, S3_ELEVATION_DIR
+from linz_s3_utils.gdal import OUTPUT_FORMAT, build_vrt, translate
 from linz_s3_utils.s3_vrt import vrt_from_dir
 
 
@@ -23,9 +23,9 @@ def build_nz_dem() -> None:
 
     parser.add_argument(
         "-o",
-        "--output_directory",
+        "--output-directory",
         type=Path,
-        default=Path("data"),
+        default=DATA_DIR,
         help="Path to the output directory.",
     )
 
@@ -36,9 +36,16 @@ def build_nz_dem() -> None:
     )
 
     parser.add_argument(
-        "--export_tiff",
+        "--export-tiff",
         action="store_true",
         help="Whether to export the final DEM as a GeoTIFF.",
+    )
+
+    parser.add_argument(
+        "--compression",
+        choices=["NONE", "LERC", "LZW", "DEFLATE", "ZSTD"],
+        default="LERC",
+        help="Compression method to use for the output GeoTIFF.",
     )
 
     args = parser.parse_args()
@@ -80,4 +87,5 @@ def build_nz_dem() -> None:
             translate(
                 output_vrt,
                 output_tiff,
+                output_config=OUTPUT_FORMAT[args.compression],
             )

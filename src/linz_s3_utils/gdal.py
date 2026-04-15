@@ -11,6 +11,32 @@ class OUTPUT_FORMAT(Enum):
         "format": "GTiff",
         "creationOptions": ["COMPRESS=NONE"],
     }
+    LZW = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=LZW",
+            "PREDICTOR=2",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
+    DEFLATE = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=DEFLATE",
+            "PREDICTOR=2",
+            "LEVEL=9",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
+    ZSTD = {
+        "format": "COG",
+        "creationOptions": [
+            "COMPRESS=ZSTD",
+            "PREDICTOR=2",
+            "LEVEL=19",
+            "NUM_THREADS=ALL_CPUS",
+        ],
+    }
     LERC = {
         "format": "COG",
         "creationOptions": [
@@ -47,11 +73,7 @@ def build_vrt(
     print()
 
 
-def translate(
-    input_file,
-    output_file,
-    output_config=OUTPUT_FORMAT.LERC,
-):
+def translate(input_file, output_file, output_config=OUTPUT_FORMAT["NONE"]):
     """Translate a VRT file to a GeoTIFF."""
     print(f"Translating {input_file.name} to {output_file.name}")
 

@@ -16,4 +16,4 @@ ENV UV_LOCKED=1
 
 RUN uv sync
 
-CMD ["uv", "run", "build-nz-dem", "--", "--help"]
+ENTRYPOINT ["uv", "run", "build-nz-dem"]

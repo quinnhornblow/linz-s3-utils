@@ -85,3 +85,9 @@ uv run build-nz-dem --resolution <meters> --output_directory <dir> [--export_tif
 ## Docker
 
 This package depends on GDAL which can be difficult to install on some systems. For convenience you can run docker with the following configuration:
+
+```
+docker build -t linz-s3-utils .
+docker run -rm -v "[path_to_output_location]:/app/data" linz-s3-utils -r 100
+```
+
