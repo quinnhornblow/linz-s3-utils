@@ -88,6 +88,6 @@ This package depends on GDAL which can be difficult to install on some systems. 
 
 ```
 docker build -t linz-s3-utils .
-docker run -rm -v "[path_to_output_location]:/app/data" linz-s3-utils -r 100
+docker run --rm -v "[path_to_output_location]:/app/data" linz-s3-utils -r 100
 ```
 
