@@ -80,7 +80,7 @@ uv run build-nz-dem --resolution <meters> --output_directory <dir> [--export_tif
 - Source data is read from the public `nz-elevation` S3 bucket.
 - The tool uses GDAL buildvrt and translate under the hood.
 - Default resampling options are TargetAlignedPixels=True and method='bilinear'.
-- tiff compression using the same LERC configuration discussed [here](https://github.com/linz/elevation/blob/master/docs/tiff-compression/README.md) but any supported GDAL creation options can be specified.
+- By default tiffs are not compressed. Compression can be specified in the CLI tool from one of the options discussed [here](https://github.com/linz/elevation/blob/master/docs/tiff-compression/README.md) but any supported GDAL creation options can be used.
 
 ## Docker
 

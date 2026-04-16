@@ -44,7 +44,7 @@ def build_nz_dem() -> None:
     parser.add_argument(
         "--compression",
         choices=["NONE", "LERC", "LZW", "DEFLATE", "ZSTD"],
-        default="LERC",
+        default="NONE",
         help="Compression method to use for the output GeoTIFF.",
     )
 

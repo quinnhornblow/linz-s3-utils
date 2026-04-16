@@ -9,40 +9,44 @@ gdal.UseExceptions()
 class OUTPUT_FORMAT(Enum):
     NONE = {
         "format": "GTiff",
-        "creationOptions": ["COMPRESS=NONE"],
+        "creationOptions": ["COMPRESS=NONE", "BIGTIFF=IF_NEEDED"],
     }
     LZW = {
-        "format": "COG",
+        "format": "GTiff",
         "creationOptions": [
             "COMPRESS=LZW",
             "PREDICTOR=2",
             "NUM_THREADS=ALL_CPUS",
+            "BIGTIFF=IF_SAFER",
         ],
     }
     DEFLATE = {
-        "format": "COG",
+        "format": "GTiff",
         "creationOptions": [
             "COMPRESS=DEFLATE",
             "PREDICTOR=2",
             "LEVEL=9",
             "NUM_THREADS=ALL_CPUS",
+            "BIGTIFF=IF_SAFER",
         ],
     }
     ZSTD = {
-        "format": "COG",
+        "format": "GTiff",
         "creationOptions": [
             "COMPRESS=ZSTD",
             "PREDICTOR=2",
             "LEVEL=19",
             "NUM_THREADS=ALL_CPUS",
+            "BIGTIFF=IF_SAFER",
         ],
     }
     LERC = {
-        "format": "COG",
+        "format": "GTiff",
         "creationOptions": [
             "COMPRESS=LERC",
             "MAX_Z_ERROR=0.001",
             "NUM_THREADS=ALL_CPUS",
+            "BIGTIFF=IF_SAFER",
         ],
     }
 
