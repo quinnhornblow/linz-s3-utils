@@ -55,3 +55,67 @@ def test_search_returns_real_item_search() -> None:
 
     assert isinstance(item_search, ItemSearch)
     assert [item.id for item in item_search.items()] == ["tile-001"]
+
+
+def test_search_pages_respect_limit() -> None:
+    catalog = build_catalog()
+    collection = next(catalog.get_children())
+
+    for index in range(2, 5):
+        collection.add_item(
+            pystac.Item(
+                id=f"tile-00{index}",
+                geometry={
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [174.80, -36.90],
+                            [174.90, -36.90],
+                            [174.90, -36.80],
+                            [174.80, -36.80],
+                            [174.80, -36.90],
+                        ]
+                    ],
+                },
+                bbox=[174.80, -36.90, 174.90, -36.80],
+                datetime=datetime(2024, 3, 14, tzinfo=timezone.utc),
+                properties={"created": "2024-03-14T00:00:00Z", "gsd": 1.0},
+            )
+        )
+
+    item_search = search(catalog, limit=2)
+    pages = list(item_search.pages_as_dicts())
+
+    assert [len(page["features"]) for page in pages] == [2, 2]
+
+
+def test_search_matched_counts_before_max_items() -> None:
+    catalog = build_catalog()
+    collection = next(catalog.get_children())
+
+    for index in range(2, 5):
+        collection.add_item(
+            pystac.Item(
+                id=f"tile-00{index}",
+                geometry={
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [174.80, -36.90],
+                            [174.90, -36.90],
+                            [174.90, -36.80],
+                            [174.80, -36.80],
+                            [174.80, -36.90],
+                        ]
+                    ],
+                },
+                bbox=[174.80, -36.90, 174.90, -36.80],
+                datetime=datetime(2024, 3, 14, tzinfo=timezone.utc),
+                properties={"created": "2024-03-14T00:00:00Z", "gsd": 1.0},
+            )
+        )
+
+    item_search = search(catalog, limit=2, max_items=1)
+
+    assert item_search.matched() == 4
+    assert [item.id for item in item_search.items()] == ["tile-001"]
