@@ -161,11 +161,27 @@ def test_search_filters_by_query_on_top_level_datetime() -> None:
 
     matches = search(
         catalog,
-        query={"datetime": {"eq": datetime(2024, 3, 14, tzinfo=timezone.utc)}},
+        query={"datetime": {"eq": "2024-03-14T00:00:00Z"}},
     )
     misses = search(
         catalog,
-        query={"datetime": {"eq": datetime(2024, 3, 15, tzinfo=timezone.utc)}},
+        query={"datetime": {"eq": "2024-03-15T00:00:00Z"}},
+    )
+
+    assert [item.id for item in matches.items()] == ["tile-001"]
+    assert list(misses.items()) == []
+
+
+def test_search_filters_by_query_on_properties_datetime() -> None:
+    catalog = build_catalog()
+
+    matches = search(
+        catalog,
+        query={"properties.datetime": {"eq": "2024-03-14T00:00:00Z"}},
+    )
+    misses = search(
+        catalog,
+        query={"properties.datetime": {"eq": "2024-03-15T00:00:00Z"}},
     )
 
     assert [item.id for item in matches.items()] == ["tile-001"]

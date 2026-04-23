@@ -19,8 +19,11 @@ def _collection_extra_fields(item: pystac.Item) -> dict[str, Any]:
 
 
 def _item_value(item: pystac.Item, field: str) -> Any:
+    item_dict = item.to_dict()
+    item_properties = item_dict.get("properties", {})
+
     if field.startswith("properties."):
-        current: Any = item.properties
+        current: Any = item_properties
         for part in field.removeprefix("properties.").split("."):
             if not isinstance(current, dict):
                 return None
@@ -28,20 +31,19 @@ def _item_value(item: pystac.Item, field: str) -> Any:
         return current
 
     if field == "collection":
-        return item.collection_id or item.to_dict().get("collection")
+        return item.collection_id or item_dict.get("collection")
 
     if field == "datetime":
-        return item.datetime
+        return item_properties.get("datetime")
 
     if field in {"id", "bbox", "geometry", "type"}:
-        return item.to_dict().get(field, getattr(item, field, None))
+        return item_dict.get(field, getattr(item, field, None))
 
-    item_dict = item.to_dict()
     if field in item_dict:
         return item_dict[field]
 
-    if field in item.properties:
-        return item.properties[field]
+    if field in item_properties:
+        return item_properties[field]
 
     return _collection_extra_fields(item).get(field)
 
