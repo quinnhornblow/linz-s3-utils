@@ -19,6 +19,7 @@ Current limitations:
 ## Goals
 
 - Provide a local search interface for `pystac.Catalog` with call patterns close to `Client.search(...)`.
+- Reuse `pystac_client.ItemSearch` for result handling if feasible, rather than maintaining a parallel result object.
 - Return a deferred search object with `ItemSearch`-like result methods:
   - `items()`
   - `items_as_dicts()`
@@ -88,10 +89,10 @@ For the `nz-elevation` use case, the local search should make it straightforward
 Expose a top-level helper:
 
 ```python
-search(catalog: pystac.Catalog, **search_kwargs) -> CatalogSearch
+search(catalog: pystac.Catalog, **search_kwargs) -> pystac_client.ItemSearch
 ```
 
-And a search result type:
+Fallback only if reuse is not viable:
 
 ```python
 class CatalogSearch:
@@ -105,6 +106,11 @@ Rationale:
 - It keeps the implementation local to this project and explicit in notebook usage.
 
 If a method-like experience is still desired later, it can be added as a thin wrapper around the same implementation.
+
+Result-object preference:
+
+- Preferred: return a real `pystac_client.ItemSearch` wired to a local execution backend.
+- Acceptable fallback: return a project-local search object only if `ItemSearch` cannot be reused cleanly without brittle monkey-patching or private-API coupling.
 
 ## Search Semantics
 
@@ -173,7 +179,7 @@ If a request mixes supported and unsupported predicates, the supported subset sh
 
 ## Result Behavior
 
-`CatalogSearch` should behave like a deferred local query object.
+The returned search object should behave like a deferred local query object.
 
 ### Execution Model
 
@@ -201,7 +207,19 @@ Behavior notes:
 
 ## Components
 
-### 1. Parameter Normalizer
+### 1. `ItemSearch` Reuse Layer
+
+The implementation should first attempt to reuse `pystac_client.ItemSearch` directly.
+
+Preferred shape:
+
+- construct an `ItemSearch` instance with normalized parameters
+- provide a local backend that satisfies the methods `ItemSearch` expects for paging and counts
+- keep the project-specific logic focused on local predicate evaluation, not on reimplementing the public result interface
+
+This should only be rejected if the integration requires invasive monkey-patching or depends too heavily on unstable internals in `pystac-client`.
+
+### 2. Parameter Normalizer
 
 Reuse compatible formatting ideas from `pystac-client` where useful:
 
@@ -211,7 +229,7 @@ Reuse compatible formatting ideas from `pystac-client` where useful:
 
 This does not need to inherit from `pystac-client.ItemSearch`, but it should mirror its accepted argument shapes closely enough to make migration easy.
 
-### 2. Predicate Evaluator
+### 3. Predicate Evaluator
 
 A small evaluator should determine whether a single item matches.
 
@@ -226,7 +244,19 @@ Responsibilities:
 
 This evaluator should be independent from paging logic so it can be tested directly.
 
-### 3. Search Executor
+### 4. Local Search Backend
+
+If `ItemSearch` is reused, the local backend should emulate the paging/count contract it needs without pretending to be a full remote STAC API.
+
+Responsibilities:
+
+- accept normalized local search parameters
+- iterate items recursively from the catalog
+- apply local predicates lazily
+- produce FeatureCollection-like page dictionaries
+- provide enough count behavior for `matched()`
+
+### 5. Search Executor
 
 The executor should:
 
@@ -236,7 +266,7 @@ The executor should:
 - materialize only when sorting is requested
 - chunk output into pages for page-oriented methods
 
-### 4. Dict Conversion Layer
+### 6. Dict Conversion Layer
 
 Object and dict result methods should share the same matching logic. Dict conversion should happen as late as possible to avoid unnecessary copying.
 
@@ -303,16 +333,18 @@ Tests should avoid network access and should not depend on the external `nz-elev
 
 ## Implementation Outline
 
-1. Create `CatalogSearch` and the public `search(...)` helper in `src/linz_s3_utils/stac.py`.
+1. Prototype reuse of `pystac_client.ItemSearch` with a local paging/count backend.
 2. Implement parameter normalization and the common-subset predicate evaluator.
-3. Implement lazy item and page result methods.
-4. Add tests covering supported filters, paging, truncation, sorting, and warnings.
-5. Add a short usage example to project documentation or notebook comments if needed.
+3. Implement the local backend for lazy item/page production.
+4. Fall back to a project-local search object only if the `ItemSearch` reuse prototype proves too brittle.
+5. Add tests covering supported filters, paging, truncation, sorting, warnings, and `ItemSearch` compatibility.
+6. Add a short usage example to project documentation or notebook comments if needed.
 
 ## Risks
 
 - Local search semantics may differ subtly from API-backed search for edge cases.
 - CQL2 expectations may be higher than the supported v1 subset.
 - Sorting requires materialization of matches, which may be slower on larger catalogs.
+- `ItemSearch` reuse may rely on `pystac-client` internals that change across versions.
 
 These risks are acceptable for the initial scope because the goal is exploratory usability rather than full API emulation.
