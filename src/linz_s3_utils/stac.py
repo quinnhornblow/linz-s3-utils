@@ -30,8 +30,15 @@ def _item_value(item: pystac.Item, field: str) -> Any:
     if field == "collection":
         return item.collection_id or item.to_dict().get("collection")
 
-    if field in {"id", "bbox", "geometry"}:
-        return getattr(item, field, None)
+    if field == "datetime":
+        return item.datetime
+
+    if field in {"id", "bbox", "geometry", "type"}:
+        return item.to_dict().get(field, getattr(item, field, None))
+
+    item_dict = item.to_dict()
+    if field in item_dict:
+        return item_dict[field]
 
     if field in item.properties:
         return item.properties[field]
@@ -130,6 +137,8 @@ class CatalogSearchIO(StacApiIO):
                 ):
                     return False
                 if op == "in" and item_value not in expected:
+                    return False
+                if op not in {"eq", "neq", "lt", "lte", "gt", "gte", "in"}:
                     return False
         return True
 

@@ -156,6 +156,50 @@ def test_search_filters_by_query_on_top_level_item_field() -> None:
     assert list(misses.items()) == []
 
 
+def test_search_filters_by_query_on_top_level_datetime() -> None:
+    catalog = build_catalog()
+
+    matches = search(
+        catalog,
+        query={"datetime": {"eq": datetime(2024, 3, 14, tzinfo=timezone.utc)}},
+    )
+    misses = search(
+        catalog,
+        query={"datetime": {"eq": datetime(2024, 3, 15, tzinfo=timezone.utc)}},
+    )
+
+    assert [item.id for item in matches.items()] == ["tile-001"]
+    assert list(misses.items()) == []
+
+
+def test_search_filters_by_query_on_top_level_type() -> None:
+    catalog = build_catalog()
+
+    matches = search(catalog, query={"type": {"eq": "Feature"}})
+    misses = search(catalog, query={"type": {"eq": "Collection"}})
+
+    assert [item.id for item in matches.items()] == ["tile-001", "tile-002"]
+    assert list(misses.items()) == []
+
+
+def test_search_filters_by_query_on_properties_field_path() -> None:
+    catalog = build_catalog()
+
+    matches = search(catalog, query={"properties.gsd": {"lte": 1.0}})
+    misses = search(catalog, query={"properties.gsd": {"gt": 2.5}})
+
+    assert [item.id for item in matches.items()] == ["tile-001"]
+    assert list(misses.items()) == []
+
+
+def test_search_query_with_unsupported_operator_fails_closed() -> None:
+    catalog = build_catalog()
+
+    results = search(catalog, query={"gsd": {"contains": 1.0}})
+
+    assert list(results.items()) == []
+
+
 def test_search_filters_by_linz_collection_metadata() -> None:
     catalog = build_catalog()
 
