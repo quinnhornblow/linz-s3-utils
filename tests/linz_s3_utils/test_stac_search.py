@@ -146,6 +146,16 @@ def test_search_filters_by_query_on_item_properties() -> None:
     assert list(misses.items()) == []
 
 
+def test_search_filters_by_query_on_top_level_item_field() -> None:
+    catalog = build_catalog()
+
+    matches = search(catalog, query={"collection": {"eq": "north-dem"}})
+    misses = search(catalog, query={"collection": {"eq": "missing-collection"}})
+
+    assert [item.id for item in matches.items()] == ["tile-001"]
+    assert list(misses.items()) == []
+
+
 def test_search_filters_by_linz_collection_metadata() -> None:
     catalog = build_catalog()
 

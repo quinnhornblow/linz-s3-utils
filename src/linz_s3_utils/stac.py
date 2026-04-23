@@ -27,7 +27,10 @@ def _item_value(item: pystac.Item, field: str) -> Any:
             current = current.get(part)
         return current
 
-    if field in {"id", "collection", "bbox", "geometry"}:
+    if field == "collection":
+        return item.collection_id or item.to_dict().get("collection")
+
+    if field in {"id", "bbox", "geometry"}:
         return getattr(item, field, None)
 
     if field in item.properties:
