@@ -37,6 +37,10 @@ Current limitations:
   - `sortby`
   - `limit`
   - `max_items`
+- Support filtering on key LINZ catalog metadata used in the notebook workflow:
+  - `linz:region`
+  - `linz:slug`
+  - `linz:geospatial_category`
 - Preserve lazy evaluation where possible so searches stream results instead of materializing the whole catalog by default.
 - Warn clearly when a requested behavior is unsupported or only partially supported locally.
 
@@ -76,6 +80,8 @@ item_search.matched()
 ```
 
 An optional follow-up ergonomic improvement is a wrapper or helper that exposes `.search(...)` as a method, but the initial implementation only needs one stable public entry point.
+
+For the `nz-elevation` use case, the local search should make it straightforward to filter using LINZ-specific metadata currently inspected in the notebook, especially `linz:region`, `linz:slug`, and `linz:geospatial_category`.
 
 ## Recommended Public API
 
@@ -150,6 +156,7 @@ Expected query support:
 - `in` if straightforward to support
 
 Supported property paths should include top-level item fields and `properties.*` paths.
+The implementation should also support the LINZ-specific fields `linz:region`, `linz:slug`, and `linz:geospatial_category`, even when they must be resolved from the parent collection metadata rather than the item payload itself.
 
 ### Partial or Unsupported Filters
 
@@ -211,6 +218,7 @@ A small evaluator should determine whether a single item matches.
 Responsibilities:
 
 - resolve item values by path
+- resolve collection-derived values by path when an item-level query depends on parent collection metadata
 - derive comparable temporal extents from item properties
 - derive geometry for spatial checks
 - apply query comparisons consistently
