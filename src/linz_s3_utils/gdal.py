@@ -6,7 +6,7 @@ from osgeo import gdal
 gdal.UseExceptions()
 
 
-class OUTPUT_FORMAT(Enum):
+class OUTPUT_FORMAT(Enum):  # noqa: D101
     NONE = {
         "format": "GTiff",
         "creationOptions": ["COMPRESS=NONE", "BIGTIFF=IF_NEEDED"],

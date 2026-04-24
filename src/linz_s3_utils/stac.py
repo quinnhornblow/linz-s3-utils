@@ -16,7 +16,7 @@ from pystac_client.item_search import (
     IntersectsLike,
 )
 from pystac_client.stac_api_io import StacApiIO
-from pystac_client.warnings import FallbackToPystac, NoConformsTo
+from pystac_client.warnings import NoConformsTo
 from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry
 
@@ -25,11 +25,7 @@ filterwarnings(
     category=NoConformsTo,
     module=r"pystac_client\.client",
 )
-filterwarnings(
-    "ignore",
-    category=FallbackToPystac,
-    module=r"pystac_client\.client",
-)
+
 
 stac_io = StacApiIO()
 cache_file = Path(__file__).parent / "stac_cache.sqlite"
