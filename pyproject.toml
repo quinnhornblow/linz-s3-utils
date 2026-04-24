@@ -11,6 +11,8 @@ dependencies = [
     "cloudpathlib[s3]>=0.23.0",
     "gdal>=3.11.4",
     "pystac-client>=0.9.0",
+    "requests-cache>=1.3.1",
+    "shapely>=2.1.2",
 ]
 
 [project.scripts]
@@ -26,4 +28,5 @@ dev = [
     "pre-commit>=4.5.1",
     "pytest>=9.0.3",
     "ruff>=0.15.10",
+    "shapely>=2.1.2",
 ]
