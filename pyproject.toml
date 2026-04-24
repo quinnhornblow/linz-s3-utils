@@ -8,6 +8,14 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "pystac>=1.14.3",
+    "pystac-client>=0.9.0",
+    "requests-cache>=1.3.1",
+    "shapely>=2.1.2",
+]
+
+[project.optional-dependencies]
+gdal = [
     "cloudpathlib[s3]>=0.23.0",
     "gdal>=3.11.4",
 ]
@@ -21,8 +29,15 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "deptry>=0.25.1",
     "notebook>=7.5.5",
+    "odc-stac>=0.5.2",
     "pre-commit>=4.5.1",
+    "pyproj>=3.7.2",
     "pytest>=9.0.3",
     "ruff>=0.15.10",
+    "shapely>=2.1.2",
 ]
+
+[tool.deptry]
+known_first_party = ["linz_s3_utils"]
