@@ -10,4 +10,4 @@ wheels/
 .venv
 
 data/
-src/linz_s3_utils/stac_cache.sqlite
+.vscode/settings.json
