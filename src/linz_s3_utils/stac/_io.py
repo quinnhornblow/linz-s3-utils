@@ -36,7 +36,7 @@ stac_io.session = requests_cache.CachedSession(
 
 
 class StacCatalogClient:
-    """Client for searching STAC catalogs that do not expose item search."""
+    """Client for searching LINZ STAC catalogs that do not expose item search."""
 
     def __init__(self, catalog_url: str):
         """Open a STAC catalog from a URL."""
