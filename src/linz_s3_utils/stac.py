@@ -41,6 +41,15 @@ class StacCatalogClient:
 
     def __init__(self, catalog: Literal["elevation"] = "elevation"):
         self.client = Client.open(CatalogURLs[catalog.upper()].value, stac_io=stac_io)
+        self._collections_by_id = None
+
+    def _get_collections_by_id(self) -> dict[str, object]:
+        """Build and cache a collection lookup by id."""
+        if self._collections_by_id is None:
+            self._collections_by_id = {
+                collection.id: collection for collection in self.client.get_collections()
+            }
+        return self._collections_by_id
 
     def search(
         self,
@@ -50,7 +59,13 @@ class StacCatalogClient:
         if collection_ids is None:
             return next(self.client.get_collections()).get_items()
         else:
-            return (item for collection in self.client.get_collections() if collection.id in collection_ids for item in collection.get_items())
+            collections_by_id = self._get_collections_by_id()
+            return (
+                item
+                for collection_id in collection_ids
+                if (collection := collections_by_id.get(collection_id)) is not None
+                for item in collection.get_items()
+            )
 
     def list_collections(self) -> list[dict[str, str | None]]:
         """List ids and titles of collections in the catalog."""
