@@ -44,9 +44,13 @@ class StacCatalogClient:
 
     def search(
         self,
+        collection_ids: list[str] | None = None,
     ) -> Iterator[Item]:
         """Mimic `pystac_client.Client.search` on a STAC catalog."""
-        return next(self.client.get_collections()).get_items()
+        if collection_ids is None:
+            return next(self.client.get_collections()).get_items()
+        else:
+            return (item for collection in self.client.get_collections() if collection.id in collection_ids for item in collection.get_items())
 
     def list_collections(self) -> list[dict[str, str | None]]:
         """List ids and titles of collections in the catalog."""
@@ -57,9 +61,10 @@ class StacCatalogClient:
 
     def load(
         self,
+        collection_ids: list[str] | None = None,
     ) -> xr.Dataset:
         """Mimic `odc.stac.load` on a STAC catalog."""
-        items = self.search()
+        items = self.search(collection_ids=collection_ids)
         ds = odc.stac.load(
             items,
             crs="EPSG:2193",
