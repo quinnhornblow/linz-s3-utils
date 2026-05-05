@@ -1,12 +1,11 @@
 import argparse
 from pathlib import Path
 
-from linz_s3_utils.constants import DATA_DIR, S3_ELEVATION_DIR
-from linz_s3_utils.gdal import OUTPUT_FORMAT, build_vrt, translate
-from linz_s3_utils.s3_vrt import vrt_from_dir
+from linz_s3_utils.constants import DATA_DIR
+from linz_s3_utils.dem import build_new_zealand_dem
 
 
-def build_nz_dem() -> None:
+def build_nz_dem(argv: list[str] | None = None) -> None:
     """Build a DEM for all of New Zealand from the 1m LIDAR and 8m contour data."""
     parser = argparse.ArgumentParser(
         prog="build_nz_dem",
@@ -48,44 +47,12 @@ def build_nz_dem() -> None:
         help="Compression method to use for the output GeoTIFF.",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    output_dir = Path(args.output_directory)
-
-    if not output_dir.exists():
-        raise FileNotFoundError(f"Output directory {output_dir} does not exist.")
-
-    nz_8m_vrt = output_dir / "new-zealand-contour-8m-dem.vrt"
-    nz_1m_vrt = output_dir / "new-zealand-lidar-1m-dem.vrt"
-    output_vrt = output_dir / f"new-zealand-{args.resolution}m-dem.vrt"
-    output_tiff = output_dir / f"new-zealand-{args.resolution}m-dem.tiff"
-
-    if not nz_8m_vrt.exists() or args.overwrite:
-        vrt_from_dir(
-            S3_ELEVATION_DIR / "new-zealand/new-zealand-contour/dem_8m/2193",
-            nz_8m_vrt,
-        )
-
-    if not nz_1m_vrt.exists() or args.overwrite:
-        vrt_from_dir(
-            S3_ELEVATION_DIR / "new-zealand/new-zealand/dem_1m/2193",
-            nz_1m_vrt,
-        )
-
-    if not output_vrt.exists() or args.overwrite:
-        build_vrt(
-            [
-                nz_8m_vrt,
-                nz_1m_vrt,
-            ],
-            output_vrt,
-            resolution=args.resolution,
-        )
-
-    if args.export_tiff:
-        if not output_tiff.exists() or args.overwrite:
-            translate(
-                output_vrt,
-                output_tiff,
-                output_config=OUTPUT_FORMAT[args.compression],
-            )
+    build_new_zealand_dem(
+        output_directory=Path(args.output_directory),
+        resolution=args.resolution,
+        overwrite=args.overwrite,
+        export_tiff=args.export_tiff,
+        compression=args.compression,
+    )

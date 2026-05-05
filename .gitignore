@@ -11,3 +11,4 @@ wheels/
 
 data/
 .vscode/settings.json
+src/linz_s3_utils/stac/stac_cache.sqlite

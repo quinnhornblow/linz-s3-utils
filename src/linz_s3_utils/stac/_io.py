@@ -3,18 +3,13 @@ from collections.abc import Iterable, Iterator
 from datetime import date, time, timezone
 from datetime import datetime as DateTime
 from pathlib import Path
-from typing import List
 from warnings import filterwarnings
 
 import requests_cache
 from pystac import Collection, Item
 from pystac.utils import str_to_datetime
 from pystac_client import Client
-from pystac_client.item_search import (
-    BBoxLike,
-    DatetimeLike,
-    IntersectsLike,
-)
+from pystac_client.item_search import BBoxLike, DatetimeLike, IntersectsLike
 from pystac_client.stac_api_io import StacApiIO
 from pystac_client.warnings import NoConformsTo
 from shapely.geometry import box, shape
@@ -36,14 +31,10 @@ stac_io.session = requests_cache.CachedSession(
 
 
 class StacCatalogClient:
-    """Client for searching LINZ STAC catalogs that do not expose item search."""
+    """Search a STAC catalog with simple local filtering."""
 
     def __init__(self, catalog_url: str):
-        """Open a STAC catalog from a URL."""
-        self.client = Client.open(
-            catalog_url,
-            stac_io=stac_io,
-        )
+        self.client = Client.open(catalog_url, stac_io=stac_io)
 
     def search(
         self,
@@ -58,38 +49,37 @@ class StacCatalogClient:
         sortby: str | None = None,
         max_items: int | None = None,
     ) -> Iterator[Item]:
-        """Search catalog collections and items with local filter logic."""
-        catalog_collections = self.client.get_collections()
+        matching_items: list[Item] = []
 
-        filtered_collections = _filter_collections(
-            catalog_collections,
-            collections=collections,
-            bbox=bbox,
-            intersects=intersects,
-            datetime=datetime,
-            gsd=gsd,
-            **(linz_filters or {}),
-        )
-
-        items = (
-            item
-            for collection in filtered_collections
-            for item in _filter_items(
-                collection.get_items(),
-                ids=ids,
+        for collection in self.client.get_collections():
+            if not collection_matches(
+                collection,
+                collections=collections,
                 bbox=bbox,
                 intersects=intersects,
                 datetime=datetime,
-            )
-        )
+                gsd=gsd,
+                filters=linz_filters or {},
+            ):
+                continue
+
+            for item in collection.get_items():
+                if item_matches(
+                    item,
+                    ids=ids,
+                    bbox=bbox,
+                    intersects=intersects,
+                    datetime=datetime,
+                ):
+                    matching_items.append(item)
 
         if sortby:
-            items = iter(sorted(items, key=lambda item: _item_sort_value(item, sortby)))
+            matching_items.sort(key=lambda item: item_sort_value(item, sortby))
 
-        for count, item in enumerate(items):
-            if max_items is not None and count >= max_items:
-                break
-            yield item
+        if max_items is not None:
+            matching_items = matching_items[:max_items]
+
+        return iter(matching_items)
 
 
 def _filter_collections(
@@ -100,39 +90,20 @@ def _filter_collections(
     datetime: DatetimeLike | None = None,
     gsd: int | None = None,
     **kwargs,
-) -> List[Collection]:
-    filtered_collections = []
-    bbox_geometry = _geometry_from_bbox(bbox)
-    intersects_geometry = _geometry_from_intersects(intersects)
-    datetime_interval = _parse_datetime_interval(datetime)
-    collection_ids = _collection_ids(collections)
-
-    for collection in catalog_collections:
-        if collection_ids is not None and collection.id not in collection_ids:
-            continue
-
-        if gsd is not None and collection.extra_fields.get("gsd") != gsd:
-            continue
-
-        if datetime_interval and not _collection_overlaps_datetime(
+) -> list[Collection]:
+    return [
+        collection
+        for collection in catalog_collections
+        if collection_matches(
             collection,
-            datetime_interval,
-        ):
-            continue
-
-        collection_geometry = _geometry_from_bbox(collection.extent.spatial.bboxes[0])
-        if bbox_geometry and not collection_geometry.intersects(bbox_geometry):
-            continue
-        if intersects_geometry and not collection_geometry.intersects(
-            intersects_geometry
-        ):
-            continue
-
-        if not _matches_extra_fields(collection, kwargs):
-            continue
-
-        filtered_collections.append(collection)
-    return filtered_collections
+            collections=collections,
+            bbox=bbox,
+            intersects=intersects,
+            datetime=datetime,
+            gsd=gsd,
+            filters=kwargs,
+        )
+    ]
 
 
 def _filter_items(
@@ -142,39 +113,101 @@ def _filter_items(
     intersects: IntersectsLike | None = None,
     datetime: DatetimeLike | None = None,
 ) -> Iterator[Item]:
-    bbox_geometry = _geometry_from_bbox(bbox)
-    intersects_geometry = _geometry_from_intersects(intersects)
-    datetime_interval = _parse_datetime_interval(datetime)
-    item_ids = _ids(ids)
-
-    for item in items:
-        if item_ids is not None and item.id not in item_ids:
-            continue
-
-        item_geometry = shape(item.geometry) if item.geometry else None
-
-        if bbox_geometry and (
-            item_geometry is None or not item_geometry.intersects(bbox_geometry)
-        ):
-            continue
-        if intersects_geometry and (
-            item_geometry is None or not item_geometry.intersects(intersects_geometry)
-        ):
-            continue
-        item_datetime_interval = _item_datetime_interval(item)
-        if (
-            datetime_interval
-            and item_datetime_interval
-            and not _intervals_overlap(
-                item_datetime_interval,
-                datetime_interval,
+    return iter(
+        [
+            item
+            for item in items
+            if item_matches(
+                item,
+                ids=ids,
+                bbox=bbox,
+                intersects=intersects,
+                datetime=datetime,
             )
-        ):
-            continue
-        yield item
+        ]
+    )
 
 
-def _matches_extra_fields(collection: Collection, filters: dict) -> bool:
+def collection_matches(
+    collection: Collection,
+    *,
+    collections: str | Iterable[str | Collection] | Collection | None,
+    bbox: BBoxLike | None,
+    intersects: IntersectsLike | None,
+    datetime: DatetimeLike | None,
+    gsd: int | None,
+    filters: dict,
+) -> bool:
+    requested_collection_ids = normalize_collection_ids(collections)
+    if (
+        requested_collection_ids is not None
+        and collection.id not in requested_collection_ids
+    ):
+        return False
+
+    if gsd is not None and collection.extra_fields.get("gsd") != gsd:
+        return False
+
+    if not collection_matches_filters(collection, filters):
+        return False
+
+    search_range = make_datetime_range(datetime)
+    if search_range is not None and not collection_overlaps_datetime(collection, search_range):
+        return False
+
+    collection_geometry = make_geometry(collection.extent.spatial.bboxes[0], from_bbox=True)
+    bbox_geometry = make_geometry(bbox, from_bbox=True)
+    intersects_geometry = make_geometry(intersects)
+
+    if bbox_geometry is not None and not collection_geometry.intersects(bbox_geometry):
+        return False
+    if (
+        intersects_geometry is not None
+        and not collection_geometry.intersects(intersects_geometry)
+    ):
+        return False
+
+    return True
+
+
+def item_matches(
+    item: Item,
+    *,
+    ids: str | Iterable[str] | None,
+    bbox: BBoxLike | None,
+    intersects: IntersectsLike | None,
+    datetime: DatetimeLike | None,
+) -> bool:
+    requested_ids = normalize_ids(ids)
+    if requested_ids is not None and item.id not in requested_ids:
+        return False
+
+    item_geometry = shape(item.geometry) if item.geometry else None
+    bbox_geometry = make_geometry(bbox, from_bbox=True)
+    intersects_geometry = make_geometry(intersects)
+
+    if bbox_geometry is not None and (
+        item_geometry is None or not item_geometry.intersects(bbox_geometry)
+    ):
+        return False
+    if intersects_geometry is not None and (
+        item_geometry is None or not item_geometry.intersects(intersects_geometry)
+    ):
+        return False
+
+    search_range = make_datetime_range(datetime)
+    item_range = item_datetime_range(item)
+    if (
+        search_range is not None
+        and item_range is not None
+        and not ranges_overlap(item_range, search_range)
+    ):
+        return False
+
+    return True
+
+
+def collection_matches_filters(collection: Collection, filters: dict) -> bool:
     for key, value in filters.items():
         if key.startswith("linz_"):
             key = key.replace("linz_", "linz:", 1)
@@ -183,7 +216,7 @@ def _matches_extra_fields(collection: Collection, filters: dict) -> bool:
     return True
 
 
-def _ids(values: str | Iterable[str] | None) -> set[str] | None:
+def normalize_ids(values: str | Iterable[str] | None) -> set[str] | None:
     if values is None:
         return None
     if isinstance(values, str):
@@ -191,7 +224,7 @@ def _ids(values: str | Iterable[str] | None) -> set[str] | None:
     return set(values)
 
 
-def _collection_ids(
+def normalize_collection_ids(
     values: str | Iterable[str | Collection] | Collection | None,
 ) -> set[str] | None:
     if values is None:
@@ -203,29 +236,23 @@ def _collection_ids(
     return {value.id if isinstance(value, Collection) else value for value in values}
 
 
-def _geometry_from_bbox(
-    bbox_value: BBoxLike | BaseGeometry | None,
+def make_geometry(
+    value: BBoxLike | IntersectsLike | BaseGeometry | None,
+    *,
+    from_bbox: bool = False,
 ) -> BaseGeometry | None:
-    if bbox_value is None:
+    if value is None:
         return None
-    if isinstance(bbox_value, BaseGeometry):
-        return bbox_value
-    return box(*bbox_value)
+    if isinstance(value, BaseGeometry):
+        return value
+    if from_bbox:
+        return box(*value)
+    if hasattr(value, "__geo_interface__"):
+        return shape(value.__geo_interface__)
+    return shape(value)
 
 
-def _geometry_from_intersects(
-    intersects: IntersectsLike | BaseGeometry | None,
-) -> BaseGeometry | None:
-    if intersects is None:
-        return None
-    if isinstance(intersects, BaseGeometry):
-        return intersects
-    if hasattr(intersects, "__geo_interface__"):
-        return shape(intersects.__geo_interface__)
-    return shape(intersects)
-
-
-def _parse_datetime_interval(
+def make_datetime_range(
     datetime_value: DatetimeLike | None,
 ) -> tuple[DateTime | None, DateTime | None] | None:
     if datetime_value is None:
@@ -234,21 +261,21 @@ def _parse_datetime_interval(
     if isinstance(datetime_value, str):
         if "/" in datetime_value:
             start, end = datetime_value.split("/", 1)
-            return _parse_datetime_bound(start), _parse_datetime_bound(end, is_end=True)
-        return _parse_datetime_bound(datetime_value), _parse_datetime_bound(
+            return parse_datetime_bound(start), parse_datetime_bound(end, is_end=True)
+        return parse_datetime_bound(datetime_value), parse_datetime_bound(
             datetime_value,
             is_end=True,
         )
 
     if isinstance(datetime_value, (list, tuple)):
         start, end = datetime_value
-        return _parse_datetime_bound(start), _parse_datetime_bound(end, is_end=True)
+        return parse_datetime_bound(start), parse_datetime_bound(end, is_end=True)
 
-    instant = _normalize_datetime(datetime_value)
+    instant = normalize_datetime(datetime_value)
     return instant, instant
 
 
-def _parse_datetime_bound(
+def parse_datetime_bound(
     value: DateTime | date | str | None,
     *,
     is_end: bool = False,
@@ -256,15 +283,15 @@ def _parse_datetime_bound(
     if value is None or value in ("", ".."):
         return None
     if not isinstance(value, str):
-        return _normalize_datetime(value)
-    if isinstance(value, str) and "T" not in value:
-        expanded = _expand_simple_date(value)
+        return normalize_datetime(value)
+    if "T" not in value:
+        expanded = expand_simple_date(value)
         if expanded:
             return expanded[1] if is_end else expanded[0]
-    return _normalize_datetime(str_to_datetime(value))
+    return normalize_datetime(str_to_datetime(value))
 
 
-def _expand_simple_date(value: str) -> tuple[DateTime, DateTime] | None:
+def expand_simple_date(value: str) -> tuple[DateTime, DateTime] | None:
     parts = value.split("-")
     if len(parts) == 1 and len(parts[0]) == 4:
         year = int(parts[0])
@@ -296,38 +323,35 @@ def _expand_simple_date(value: str) -> tuple[DateTime, DateTime] | None:
     return None
 
 
-def _normalize_datetime(value: DateTime | date | None) -> DateTime | None:
+def normalize_datetime(value: DateTime | date | None) -> DateTime | None:
     if value is None:
         return None
     if isinstance(value, DateTime):
-        dt = value
+        normalized = value
     else:
-        dt = DateTime.combine(value, time.min)
-    if dt.tzinfo:
-        return dt.astimezone(timezone.utc).replace(tzinfo=None)
-    return dt
+        normalized = DateTime.combine(value, time.min)
+    if normalized.tzinfo:
+        return normalized.astimezone(timezone.utc).replace(tzinfo=None)
+    return normalized
 
 
-def _collection_overlaps_datetime(
+def collection_overlaps_datetime(
     collection: Collection,
-    datetime_interval: tuple[DateTime | None, DateTime | None],
+    search_range: tuple[DateTime | None, DateTime | None],
 ) -> bool:
     if not collection.extent.temporal:
         return False
 
     for start, end in collection.extent.temporal.intervals:
-        collection_interval = (_normalize_datetime(start), _normalize_datetime(end))
-        if _intervals_overlap(collection_interval, datetime_interval):
+        collection_range = (normalize_datetime(start), normalize_datetime(end))
+        if ranges_overlap(collection_range, search_range):
             return True
-
     return False
 
 
-def _item_datetime_interval(
-    item: Item,
-) -> tuple[DateTime | None, DateTime | None] | None:
+def item_datetime_range(item: Item) -> tuple[DateTime | None, DateTime | None] | None:
     if item.datetime:
-        instant = _normalize_datetime(item.datetime)
+        instant = normalize_datetime(item.datetime)
         return instant, instant
 
     start = item.properties.get("start_datetime")
@@ -335,12 +359,12 @@ def _item_datetime_interval(
     if not start and not end:
         return None
 
-    return _parse_datetime_bound(str(start)) if start else None, _parse_datetime_bound(
-        str(end)
-    ) if end else None
+    start_value = parse_datetime_bound(str(start)) if start else None
+    end_value = parse_datetime_bound(str(end)) if end else None
+    return start_value, end_value
 
 
-def _intervals_overlap(
+def ranges_overlap(
     left: tuple[DateTime | None, DateTime | None],
     right: tuple[DateTime | None, DateTime | None],
 ) -> bool:
@@ -356,18 +380,18 @@ def _intervals_overlap(
     return starts_before_right_ends and ends_after_right_starts
 
 
-def _item_sort_value(item: Item, sortby: str):
+def item_sort_value(item: Item, sortby: str):
     reverse = sortby.startswith("-")
     field_name = sortby[1:] if reverse else sortby
     value = getattr(item, field_name, None)
     if value is None:
         value = item.properties.get(field_name)
     if field_name == "datetime":
-        value = _normalize_datetime(value)
-    return (value is None, value if not reverse else _reverse_sort_value(value))
+        value = normalize_datetime(value)
+    return (value is None, value if not reverse else reverse_sort_value(value))
 
 
-def _reverse_sort_value(value):
+def reverse_sort_value(value):
     if isinstance(value, DateTime):
         return -value.timestamp()
     if isinstance(value, (int, float)):

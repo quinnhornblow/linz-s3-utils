@@ -1,13 +1,10 @@
 from pathlib import Path
 
-from cloudpathlib import CloudPath, S3Client
+S3_ELEVATION_BUCKET = "s3://nz-elevation"
 
-S3_PUBLIC_CLIENT = S3Client(no_sign_request=True)
-
-S3_ELEVATION_DIR = CloudPath("s3://nz-elevation/", client=S3_PUBLIC_CLIENT)
-
-S3_COASTAL_DIR = CloudPath("s3://nz-coastal/", client=S3_PUBLIC_CLIENT)
-
-S3_IMAGERY_DIR = CloudPath("s3://nz-imagery/", client=S3_PUBLIC_CLIENT)
+CONTOUR_DEM_S3_DIRECTORY = (
+    f"{S3_ELEVATION_BUCKET}/new-zealand/new-zealand-contour/dem_8m/2193"
+)
+LIDAR_DEM_S3_DIRECTORY = f"{S3_ELEVATION_BUCKET}/new-zealand/new-zealand/dem_1m/2193"
 
 DATA_DIR = Path(__file__).parents[2] / "data"
