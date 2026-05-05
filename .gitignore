@@ -9,6 +9,5 @@ wheels/
 # Virtual environments
 .venv
 
-data/
 .vscode/settings.json
-src/linz_s3_utils/stac/stac_cache.sqlite
+*.sqlite
